@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expenses Tracker</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f7f7f7;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    input, select, button {
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      cursor: pointer;
+      background: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 25px;
+    }
+
+    li {
+      background: white;
+      margin-bottom: 10px;
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+
+    .amount {
+      font-weight: bold;
+      color: #0070f3;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Expenses Tracker</h1>
+
+  <form id="expenseForm">
+    <input type="text" id="description" placeholder="Description" required />
+    <input type="number" id="amount" placeholder="Amount" required />
+    <input type="text" id="category" placeholder="Category" required />
+    <input type="date" id="date" required />
+    <button type="submit">Add Expense</button>
+  </form>
+
+  <p id="errorMessage" class="error"></p>
+
+  <ul id="expensesList"></ul>
+
+  <script>
+    const form = document.getElementById("expenseForm");
+    const list = document.getElementById("expensesList");
+    const errorEl = document.getElementById("errorMessage");
+
+    // Load expenses on page load
+    async function loadExpenses() {
+      try {
+        const res = await fetch("/api/expenses");
+        const json = await res.json();
+
+        if (!json.success) return;
+
+        list.innerHTML = "";
+        json.data.forEach(exp => addExpenseToDOM(exp));
+
+      } catch (err) {
+        console.error("Failed to load expenses", err);
+      }
+    }
+
+    // Add a single expense element into the list
+    function addExpenseToDOM(expense) {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <div><strong>${expense.description}</strong></div>
+        <div class="amount">$${expense.amount.toFixed(2)}</div>
+        <div>${expense.category}</div>
+        <div>${new Date(expense.date).toLocaleDateString()}</div>
+      `;
+      list.appendChild(li);
+    }
+
+    // Handle form submit (POST)
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorEl.textContent = "";
+
+      const newExpense = {
+        description: document.getElementById("description").value.trim(),
+        amount: document.getElementById("amount").value,
+        category: document.getElementById("category").value.trim(),
+        date: document.getElementById("date").value,
+      };
+
+      try {
+        const res = await fetch("/api/expenses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newExpense),
+        });
+
+        const json = await res.json();
+
+        if (!json.success) {
+          errorEl.textContent = json.error || "Failed to add expense";
+          return;
+        }
+
+        addExpenseToDOM(json.data);
+        form.reset();
+
+      } catch (err) {
+        console.error("POST error:", err);
+        errorEl.textContent = "Something went wrong.";
+      }
+    });
+
+    loadExpenses(); // Initialize
+  </script>
+
+</body>
+</html>
