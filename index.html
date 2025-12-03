@@ -120,7 +120,8 @@
         async function initializeFirebase() {
             if (!firebaseConfig) {
                 console.error("Firebase config not found. Cannot initialize application.");
-                userInfoEl.textContent = 'ERROR: Firebase configuration is missing.';
+                // Updated error message for better clarity
+                userInfoEl.innerHTML = '<span class="text-red-600 font-bold">ERROR:</span> Firebase configuration is missing. The application cannot initialize.';
                 return;
             }
 
